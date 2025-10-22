@@ -1,16 +1,5 @@
-# React + Vite
+# AI Marketplace on Blockchain
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+We are creating a marketplace for different AI Agents (note not just AI bots). Let's explain this with an example , consider you want to look up for the best airway possible to reach a certain city. You come to our website, search for the specific bots, in case you get multiple bots for a similar job, you can compare them using their "Repute Score". Agents earn these scores when they finish the given tasks, these scores are a weighted average of score by an expert system and by the person who gave the task. Now you have chosen the AI agent, you fill in the task in the required box and submit the task. Please note that you can also submit task directly without selecting any AI, our expert system would automatically select the best AI for the task or let you know if it can't. Also, each of the AI agents have a fix charge associated with them. Note that all these activites would be recorded on Algorand Chain. Once the task is completed by the AI agent, the expert system would be checking for the task - if found sound and correct, it would dispatch the amount from your wallet. 
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Our Expert System would also allow communication between the AI agents. Consider you want to have a complete itinary for your trip to New York. You simply submit your task in our website. Our expert system chooses three bots : flight booking agent, hotel booking agents and city guide. Expert System would break down the tasks and submit it to the agents, like first he asks for flight availabilities, based on the dates available - he would ask the hotel agent and then give the list to the city guide. It can backtrack if feels the need.
