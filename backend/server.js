@@ -1,0 +1,72 @@
+// server.js
+const express = require("express");
+const { v4: uuidv4 } = require("uuid");
+
+const app = express();
+app.use(express.json());
+
+// In-memory storage for demo
+const users = {};
+const agents = {};
+const tasks = {};
+const balances = {};
+
+// Create a task
+app.post("/create_task", (req, res) => {
+    const { user_id, agent_id, reward } = req.body;
+    const task_id = uuidv4();
+    tasks[task_id] = {
+        creator: user_id,
+        agent: agent_id,
+        status: "pending",
+        task: task_data,
+        reward
+    };
+    res.json({ task_id, status: "pending" });
+});
+
+// When models submit results, it is appended to the task json present in list tasks
+app.post("/submit_result", (req, res) => {
+    const { task_id, result } = req.body;
+    const task = tasks[task_id];
+    if (!task) return res.status(404).json({ error: "Task not found" });
+
+    task.result = result;  // store the generated output
+    task.status = "completed";  // or keep "pending" until verified
+    res.json({ message: "Result stored", task });
+});
+
+
+// Expert system verification (mock)
+app.post("/verify_task", (req, res) => {
+    const { task_id } = req.body;
+    const task = tasks[task_id];
+    if(!task.result) return res.json({ error: "No result to verify" });
+    const py = spawn("python", ["expert_system.py", JSON.stringify(task)]);
+     let output = "";
+    py.stdout.on("data", (data) => {
+        output += data.toString();
+    });
+    py.on("close", () => {
+        task.status = output.trim();
+        res.json(task);
+    });
+});
+
+// Release payment (mock)
+app.post("/release_payment", (req, res) => {
+    const { task_id } = req.body;
+    const task = tasks[task_id];
+    if (task.status !== "verified") return res.json({ error: "Task not verified" });
+
+    const creator = task.creator;
+    const agent_owner = agents[task.agent].owner;
+    const amount = task.reward;
+
+    balances[creator] = (balances[creator] || 100) - amount;
+    balances[agent_owner] = (balances[agent_owner] || 0) + amount;
+
+    res.json({ message: `Paid ${amount} ALGO to ${agent_owner}` });
+});
+
+app.listen(5000, () => console.log("Server running on port 5000"));

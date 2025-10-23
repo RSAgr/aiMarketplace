@@ -1,6 +1,12 @@
 from pyteal import *
 
 def approval_program():
+    # task_creator = Bytes("creator")
+    # agent = Bytes("agent")
+    # result_hash = Bytes("result_hash")
+    # verified = Bytes("verified")
+    # payment_amount = Bytes("amount")
+
     task_creator = Bytes("creator")
     agent = Bytes("agent")
     result_hash = Bytes("result_hash")
@@ -40,4 +46,4 @@ def approval_program():
 
     return program
 
-print(compileTeal(approval_program(), mode=Mode.Application, version=6))
+compileTeal(approval_program(), mode=Mode.Application, version=6)
