@@ -1,11 +1,12 @@
 // server.js
 import express from 'express'
-
-
+import cors from 'cors'
+import { spawn } from 'child_process';
 import { v4 as uuidv4 } from "uuid";
 
 const app = express();
 app.use(express.json());
+app.use(cors())
 
 // In-memory storage for demo
 const users = {};
@@ -15,10 +16,10 @@ const balances = {};
 
 // Create a task
 app.post("/create_task", (req, res) => {
-    const { user_id, agent_id, reward } = req.body;
+    const { title, task_data, reward, agent_id } = req.body;
     const task_id = uuidv4();
     tasks[task_id] = {
-        creator: user_id,
+        creator: 1,
         agent: agent_id,
         status: "pending",
         task: task_data,

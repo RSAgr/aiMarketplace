@@ -34,6 +34,9 @@ export default function Navbar() {
           <Link to="/submit" className="nav-link">
             Submit Task
           </Link>
+          <Link to="/tasks" className="nav-link">
+            Tasks' Results
+          </Link>
         </div>
 
         <button onClick={handleConnect} className="wallet-button">

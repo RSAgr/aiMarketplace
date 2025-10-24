@@ -12,11 +12,11 @@ def divide_task(task_json):
         result = agent(task)
         
         results += result["result"] + "\n"
-    print(results)
+    return results
     # for agent_name, result in results.items():
     #     print(f"Result from {agent_name}: {result}")
         
 if __name__ == "__main__":
     # Example usage
     taskJson = json.loads('{"task": "Plan a weekend trip to Paris including travel, hotel, food, and activities."}')
-    divide_task(taskJson)
+    return divide_task(taskJson)

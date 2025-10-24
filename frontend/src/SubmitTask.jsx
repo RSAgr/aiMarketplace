@@ -16,7 +16,7 @@ export default function SubmitTask() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try{
-      const response = await fetch("http://localhost:5000/submit_task", {
+      const response = await fetch("http://localhost:5000/create_task", {
         method : "POST",
         headers: {
           "Content-Type": "application/json",
@@ -25,8 +25,15 @@ export default function SubmitTask() {
       });
       if(response.ok){
         console.log("Task Submitted:", formData);
-        alert("Your task has been submitted for AI agents to review!");
+        
         setFormData({ title: "", description: "", reward: "", preferredAgent: "" });
+        const result = await response.json();
+        const existingTasks = JSON.parse(localStorage.getItem("tasks"))||[]
+        existingTasks.push(result);
+
+        // Save updated list
+        localStorage.setItem("tasks", JSON.stringify(existingTasks));
+        alert("Submitted");
       }
       else{
         console.log(await response.text);
@@ -81,7 +88,7 @@ export default function SubmitTask() {
         <div className="form-group">
           <label>Preferred AgentID (optional)</label>
           <input
-            type="text"
+            type="number"
             name="preferredAgent"
             value={formData.preferredAgent}
             onChange={handleChange}
