@@ -1,6 +1,8 @@
 // server.js
-const express = require("express");
-const { v4: uuidv4 } = require("uuid");
+import express from 'express'
+
+
+import { v4 as uuidv4 } from "uuid";
 
 const app = express();
 app.use(express.json());

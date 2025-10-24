@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { connectWallet, disconnectWallet } from "../src/utils/algorand";
+import "./Navbar.css"; // <-- import the CSS file
 
 export default function Navbar() {
   const [walletAddress, setWalletAddress] = useState(null);
@@ -20,18 +21,22 @@ export default function Navbar() {
     : null;
 
   return (
-    <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-xl font-bold text-blue-600">AI Agent Market</Link>
-        <div className="hidden md:flex space-x-6">
-          <Link to="/agents" className="hover:text-blue-600">Agents</Link>
-          <Link to="/submit" className="hover:text-blue-600">Submit Task</Link>
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link to="/" className="navbar-logo">
+          AI Agent Market
+        </Link>
+
+        <div className="navbar-links">
+          <Link to="/agents" className="nav-link">
+            Submit Agent
+          </Link>
+          <Link to="/submit" className="nav-link">
+            Submit Task
+          </Link>
         </div>
 
-        <button
-          onClick={handleConnect}
-          className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700"
-        >
+        <button onClick={handleConnect} className="wallet-button">
           {walletAddress ? shortAddress : "Connect Wallet"}
         </button>
       </div>

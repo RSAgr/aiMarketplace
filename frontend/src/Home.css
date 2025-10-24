@@ -1,0 +1,35 @@
+/* Home.css */
+body {
+  background: linear-gradient(180deg, #0b1120, #111827);
+  color: #f9fafb;
+  font-family: 'Inter', sans-serif;
+}
+
+.home-container {
+  padding-top: 100px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 20px 40px;
+  text-align: center;
+}
+
+.home-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin-bottom: 10px;
+}
+
+.home-subtitle {
+  font-size: 1rem;
+  color: #9ca3af;
+  max-width: 700px;
+  margin: 0 auto 50px;
+}
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 32px;
+  justify-items: center;
+}
