@@ -22,19 +22,33 @@ app.post("/create_task", (req, res) => {
         task: task_data,
         reward
     };
-    res.json({ task_id, status: "pending" });
+    //res.json({ task_id, status: "pending" });
+    // why to wait, immediately call the agent to process the task
+    const py = spawn("python", ["task_divider.py",JSON.stringify(tasks[task_id].task)]);
+    let output = "";
+    py.stdout.on("data", (data) => {
+        output += data.toString();
+    });
+    py.on("close", () => {
+        tasks[task_id].result = output.trim();
+        tasks[task_id].status = "completed";
+        res.json({ message: "Result stored", task: tasks[task_id] });
+    });
+    // the json which is returned contains the result
 });
 
 // When models submit results, it is appended to the task json present in list tasks
-app.post("/submit_result", (req, res) => {
-    const { task_id, result } = req.body;
-    const task = tasks[task_id];
-    if (!task) return res.status(404).json({ error: "Task not found" });
+// app.post("/submit_result", (req, res) => {
+//     const { task_id, result } = req.body;
+//     const task = tasks[task_id];
+//     if (!task) return res.status(404).json({ error: "Task not found" });
 
-    task.result = result;  // store the generated output
-    task.status = "completed";  // or keep "pending" until verified
-    res.json({ message: "Result stored", task });
-});
+//     task.result = result;  // store the generated output
+//     task.status = "completed";  // or keep "pending" until verified
+//     res.json({ message: "Result stored", task });
+// });
+
+// I don;t think we need /submit_result endpoint as the result is generated immediately after task creation
 
 
 // Expert system verification (mock)
