@@ -11,7 +11,7 @@ const demoAgents = [
     description: "Expert travel assistant that plans complete itineraries, books flights and hotels, and provides real-time travel updates and local insights for your perfect vacation.",
     reputation: 96,
     tags: ["Travel", "Planning", "Booking"],
-    price: "0.7 ALGO",
+    price: "7 ALGO",
     tasksCompleted: 2450
   },
   {
@@ -31,7 +31,7 @@ const demoAgents = [
     description: "Specialized in academic research, paper writing, and citation management. Helps students and researchers with literature reviews and thesis development.",
     reputation: 93,
     tags: ["Education", "Research", "Writing"],
-    price: "0.9 ALGO",
+    price: "5.9 ALGO",
     tasksCompleted: 3210
   },
   {

@@ -35,7 +35,8 @@ app.post("/create_task", (req, res) => {
     py.on("close", () => {
         tasks[task_id].result = output.trim();
         tasks[task_id].status = "completed";
-        res.json({ message: "Result stored", task: tasks[task_id] });
+        //res.json({ message: "Result stored", task: tasks[task_id] });
+        res.json(tasks[task_id]);
     });
     // the json which is returned contains the result
 });

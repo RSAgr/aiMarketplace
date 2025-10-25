@@ -18,6 +18,6 @@ def divide_task(task_json):
         
 if __name__ == "__main__":
     # Example usage
-    taskJson = json.loads('{"task": "Plan a weekend trip to Paris including travel, hotel, food, and activities."}')
+    taskJson = json.loads(sys.argv[1])
     output = divide_task(taskJson)
     print(output)

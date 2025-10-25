@@ -13,7 +13,7 @@ def evaluate(task, result):
     replaced with a more sophisticated expert system logic with multiple checks and balances (AI voting for Truthness)
     """
     # Placeholder logic for evaluation
-    GEMINI_API_KEY = "AIzaSyDr4E-qLuYvOUemP5mjyCPmp8TCY05iguQ"
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel("gemini-2.0-flash")
     
@@ -29,10 +29,7 @@ def evaluate(task, result):
 ## for testing purposes
 if __name__ == "__main__":
     # Example usage
-    taskJson = {
-                "task": "Translate Hello to French",
-                 "result": "tepour"
-                 }  # Expecting a JSON string input
+    taskJson = json.loads(sys.argv[1])# Expecting a JSON string input
     task = taskJson['task']
     result = taskJson['result']
     is_approved = evaluate(task, result)

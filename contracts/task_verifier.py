@@ -26,7 +26,7 @@ def approval_program():
     ])
 
     approve_and_release = Seq([
-        Assert(Txn.sender() == App.globalGet(task_creator)),  # Only task creator (or expert system AI) can approve
+        Assert(Txn.sender() == App.globalGet(task_creator)),  # expert system AI can approve
         App.globalPut(verified, Int(1)),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({

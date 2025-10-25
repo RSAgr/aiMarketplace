@@ -3,7 +3,7 @@ const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 export default function Tasks() {
   return (
     <div>
-      <h2>Submitted Tasks</h2>
+      <h2>Submitted Task(s)</h2>
       {tasks.map((t, i) => (
         <div key={i}>
           <h3>
@@ -18,3 +18,4 @@ export default function Tasks() {
     </div>
   );
 }
+
