@@ -1,5 +1,6 @@
-import { useState } from "react";
-import "./SubmitTask.css"; // 👈 add this
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./SubmitTask.css";
 
 export default function SubmitTask() {
   const [formData, setFormData] = useState({
@@ -8,6 +9,21 @@ export default function SubmitTask() {
     reward: "",
     preferredAgent: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
+  
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(false);
+        navigate('/tasks'); // Redirect to tasks page after successful submission
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,32 +31,52 @@ export default function SubmitTask() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try{
+    setError("");
+    setIsSubmitting(true);
+    
+    // Basic validation
+    if (!formData.title.trim() || !formData.description.trim() || !formData.reward) {
+      setError("Please fill in all required fields");
+      setIsSubmitting(false);
+      return;
+    }
+    
+    if (parseFloat(formData.reward) <= 0) {
+      setError("Reward must be greater than 0");
+      setIsSubmitting(false);
+      return;
+    }
+    
+    try {
       const response = await fetch("http://localhost:5000/create_task", {
-        method : "POST",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          reward: parseFloat(formData.reward) // Ensure reward is a number
+        })
       });
-      if(response.ok){
-        console.log("Task Submitted:", formData);
-        
-        setFormData({ title: "", description: "", reward: "", preferredAgent: "" });
-        const result = await response.json();
-        const existingTasks = JSON.parse(localStorage.getItem("tasks"))||[]
-        existingTasks.push(result);
-
-        // Save updated list
-        localStorage.setItem("tasks", JSON.stringify(existingTasks));
-        alert("Submitted");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to submit task");
       }
-      else{
-        console.log(await response.text);
-      }
-    }
-    catch(err){
+      
+      const result = await response.json();
+      const existingTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      localStorage.setItem("tasks", JSON.stringify([...existingTasks, result]));
+      
+      // Reset form and show success
+      setFormData({ title: "", description: "", reward: "", preferredAgent: "" });
+      setSuccess("Task submitted successfully! Redirecting...");
+      
+    } catch (err) {
       console.error("Error submitting task:", err);
+      setError(err.message || "An error occurred while submitting the task");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -49,56 +85,85 @@ export default function SubmitTask() {
       <h1 className="submit-title">Submit a Task</h1>
 
       <form onSubmit={handleSubmit} className="submit-form">
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
+        
         <div className="form-group">
-          <label>Task Title</label>
+          <label htmlFor="title">Task Title <span className="required">*</span></label>
           <input
+            id="title"
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="e.g., Plan my Goa trip"
-            required
+            disabled={isSubmitting}
+            maxLength={100}
           />
         </div>
 
         <div className="form-group">
-          <label>Description</label>
+          <label htmlFor="description">Description <span className="required">*</span></label>
           <textarea
+            id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
-            rows="4"
-            placeholder="Describe what the AI should do..."
-            required
+            rows="5"
+            placeholder="Describe what the AI should do in detail..."
+            disabled={isSubmitting}
+            maxLength={1000}
           />
         </div>
 
         <div className="form-group">
-          <label>Reward (in ALGO)</label>
-          <input
-            type="number"
-            name="reward"
-            value={formData.reward}
-            onChange={handleChange}
-            placeholder="e.g., 5"
-            required
-          />
+          <label htmlFor="reward">Reward (ALGO) <span className="required">*</span></label>
+          <div className="reward-input">
+            <span className="currency-symbol">ALGO</span>
+            <input
+              id="reward"
+              type="number"
+              name="reward"
+              value={formData.reward}
+              onChange={handleChange}
+              placeholder="0.00"
+              min="0.01"
+              step="0.01"
+              disabled={isSubmitting}
+            />
+          </div>
         </div>
 
         <div className="form-group">
-          <label>Preferred AgentID (optional)</label>
+          <label htmlFor="preferredAgent">Preferred Agent ID (optional)</label>
           <input
-            type="number"
+            id="preferredAgent"
+            type="text"
             name="preferredAgent"
             value={formData.preferredAgent}
             onChange={handleChange}
-            placeholder="e.g., TravelPlanner AI"
+            placeholder="e.g., agent-123"
+            disabled={isSubmitting}
           />
+          <small className="hint">Leave empty to let the system choose the best agent</small>
         </div>
 
-        <button type="submit" className="submit-btn">
-          Submit Task
+        <button 
+          type="submit" 
+          className="submit-btn"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <span className="loading-spinner"></span>
+              Submitting...
+            </>
+          ) : 'Submit Task'}
         </button>
+        
+        <div className="form-footer">
+          <small>Fields marked with <span className="required">*</span> are required</small>
+        </div>
       </form>
     </div>
   );

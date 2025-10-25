@@ -1,8 +1,8 @@
 import json
-from agents.dummy_agents.travel import solve_task as travel
-from agents.dummy_agents.hotel import solve_task as hotel
-from agents.dummy_agents.food import solve_task as food
-from agents.dummy_agents.activity import solve_task as activity
+from dummy_agents.travel import solve_task as travel
+from dummy_agents.hotel import solve_task as hotel
+from dummy_agents.food import solve_task as food
+from dummy_agents.activity import solve_task as activity
 
 def divide_task(task_json):
     task = task_json['task']
@@ -19,4 +19,5 @@ def divide_task(task_json):
 if __name__ == "__main__":
     # Example usage
     taskJson = json.loads('{"task": "Plan a weekend trip to Paris including travel, hotel, food, and activities."}')
-    return divide_task(taskJson)
+    output = divide_task(taskJson)
+    print(output)
