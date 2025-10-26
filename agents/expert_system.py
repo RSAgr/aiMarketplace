@@ -3,11 +3,13 @@ import json
 import sys
 import google.generativeai as genai
 from langgraph.graph import StateGraph, END
+import importlib
 
 # ===========================
 # 🔹 Setup
 # ===========================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = "AIzaSyDr4E-qLuYvOUemP5mjyCPmp8TCY05iguQ"
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
@@ -24,8 +26,6 @@ class ExpertState(TypedDict, total=False):
     feedback: str
     approved: bool
 
-
-
 # ===========================
 # 🔹 Step 1: Task Understanding
 # ===========================
@@ -36,6 +36,37 @@ def understand_task(state: ExpertState):
     state["understanding"] = response.text.strip()
     return state
 
+def route_to_agent(state: ExpertState):
+    task = state["task"]
+
+    # Simple agent registry (can later load from JSON or folder)
+    AGENT_MAP = {
+        "hotel": "hotel_agent",
+        "flight": "flight_agent",
+        "weather": "weather_agent"
+    }
+
+    # Ask Gemini to choose which agent should handle the task
+    prompt = f"""Task: {task}
+    Available agents: {', '.join(AGENT_MAP.keys())}
+    Which agent should handle this task? Respond with only the agent name."""
+    response = model.generate_content(prompt)
+    chosen = response.text.strip().lower()
+
+    # Load and call the chosen agent
+    agent_module = AGENT_MAP.get(chosen)
+    if not agent_module:
+        state["result"] = "No suitable agent found."
+        return state
+
+    try:
+        mod = importlib.import_module(agent_module)
+        agent_result = mod.solve_task(task)
+        state["result"] = agent_result["result"]
+    except Exception as e:
+        state["result"] = f"Error running agent: {e}"
+
+    return state
 
 # ===========================
 # 🔹 Step 2: Evaluate Result
@@ -69,10 +100,12 @@ def generate_feedback(state: ExpertState):
 def build_graph():
     graph = StateGraph(ExpertState)
     graph.add_node("understand_task", understand_task)
+    graph.add_node("route_to_agent", route_to_agent)
     graph.add_node("evaluate_result", evaluate_result)
     graph.add_node("generate_feedback", generate_feedback)
 
-    graph.add_edge("understand_task", "evaluate_result")
+    graph.add_edge("understand_task", "route_to_agent")
+    graph.add_edge("route_to_agent", "evaluate_result")
     graph.add_edge("evaluate_result", "generate_feedback")
     graph.add_edge("generate_feedback", END)
     graph.set_entry_point("understand_task")
@@ -86,7 +119,7 @@ def build_graph():
 if __name__ == "__main__":
     # Load task data from CLI
     #task_json = json.loads(sys.argv[1])
-    task_json = {"task": "Write a Python function to calculate the factorial of a number.", "result": "def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1)"}
+    task_json = {"task": "Book a flight to Delhi", "result": "Flight booked for ₹4500 via Air India."}
     task = task_json.get("task")
     result = task_json.get("result")
 

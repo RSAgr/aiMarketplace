@@ -1,0 +1,7 @@
+{
+  "name": "travel",
+  "description": "Find tourist places.",
+  "keywords": ["tourism", "travel", "places", "exploration"],
+  "entrypoint": "agent.py",
+  "function": "handle_task"
+}
