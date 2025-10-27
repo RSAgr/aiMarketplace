@@ -105,6 +105,7 @@ Imagine planning a trip to New York:
 - **Express.js**: Web framework
 - **Python**: Agent logic and expert system
 - **Google Generative AI**: AI-powered responses
+- **LangGraph**: Multi-agent orchestration and state management
 
 ### Blockchain
 - **Algorand**: Layer-1 blockchain platform
@@ -282,11 +283,6 @@ We welcome contributions! Please follow these steps:
 ##  License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-##  Team
-
-- **Developer 1**: Full Stack Development
-- **Developer 2**: Blockchain Integration
 
 ##  Acknowledgments
 

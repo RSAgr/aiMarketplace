@@ -62,6 +62,7 @@ def route_to_agent(state: ExpertState):
     try:
         mod = importlib.import_module(agent_module)
         agent_result = mod.solve_task(task)
+        print(agent_result)
         state["result"] = agent_result["result"]
     except Exception as e:
         state["result"] = f"Error running agent: {e}"
@@ -93,7 +94,6 @@ def generate_feedback(state: ExpertState):
     state["approved"] = state["verdict"].startswith("y")
     return state
 
-
 # ===========================
 # 🔹 Build LangGraph Flow
 # ===========================
@@ -103,35 +103,27 @@ def build_graph():
     graph.add_node("route_to_agent", route_to_agent)
     graph.add_node("evaluate_result", evaluate_result)
     graph.add_node("generate_feedback", generate_feedback)
-
     graph.add_edge("understand_task", "route_to_agent")
     graph.add_edge("route_to_agent", "evaluate_result")
     graph.add_edge("evaluate_result", "generate_feedback")
     graph.add_edge("generate_feedback", END)
     graph.set_entry_point("understand_task")
-
     return graph.compile()
 
-
-# ===========================
-# 🔹 Entry Point
-# ===========================
 if __name__ == "__main__":
-    # Load task data from CLI
-    #task_json = json.loads(sys.argv[1])
-    task_json = {"task": "Book a flight to Delhi", "result": "Flight booked for ₹4500 via Air India."}
+    if len(sys.argv) > 1:
+        task_json = json.loads(sys.argv[1])
+    else:
+        # Simulate getting data from an agent
+        task_json = {
+            "task": "Book a hotel in Manali",
+            "result": None  # None for now — will be filled later by an agent
+        }
+
     task = task_json.get("task")
     result = task_json.get("result")
 
-    # Initialize graph and run
     graph = build_graph()
     final_state = graph.invoke({"task": task, "result": result})
+    print(json.dumps(final_state, indent=2))
 
-    # Output final decision
-    output = {
-        "understanding": final_state.get("understanding"),
-        "feedback": final_state.get("feedback"),
-        "approved": final_state.get("approved"),
-    }
-
-    print(json.dumps(output))
