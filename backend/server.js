@@ -71,6 +71,27 @@ app.post("/verify_task", (req, res) => {
     });
 });
 
+
+
+app.post("/getAIResponse", async (req, res) => {
+    const { userInput } = req.body;
+    // Call your AI model or service here
+    // const aiResponse = await callAIModel(userInput);
+    // res.json({ reply: aiResponse });
+    const py = spawn("python", ["D:\\AImarket\\agents\\expert_system.py", JSON.stringify({
+    taskInput: userInput,
+    result: "This is a mock AI response from the backend."
+  }),]);
+    let output = "";
+    py.stdout.on("data", (data) => {
+        output += data.toString();
+    });
+    py.on("close", () => {
+        res.json({ reply: output.trim() });
+    });
+    //res.json({ reply: "This is a mock AI response from the backend." });
+});
+
 // Release payment (mock)
 app.post("/release_payment", (req, res) => {
     const { task_id } = req.body;

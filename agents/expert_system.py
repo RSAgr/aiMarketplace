@@ -4,12 +4,16 @@ import sys
 import google.generativeai as genai
 from langgraph.graph import StateGraph, END
 import importlib
+import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # ===========================
 # 🔹 Setup
 # ===========================
-# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_API_KEY = "AIzaSyDr4E-qLuYvOUemP5mjyCPmp8TCY05iguQ"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
@@ -43,7 +47,6 @@ def route_to_agent(state: ExpertState):
     AGENT_MAP = {
         "hotel": "hotel_agent",
         "flight": "flight_agent",
-        "weather": "weather_agent"
     }
 
     # Ask Gemini to choose which agent should handle the task
@@ -115,11 +118,13 @@ if __name__ == "__main__":
         task_json = json.loads(sys.argv[1])
     else:
         # Simulate getting data from an agent
-        task_json = {
-            "task": "Book a hotel in Manali",
+        try:
+           task_json = json.load(sys.stdin)
+        except Exception as e:
+            task_json = {
+            "task": "Book a hotel in Goa",
             "result": None  # None for now — will be filled later by an agent
         }
-
     task = task_json.get("task")
     result = task_json.get("result")
 
