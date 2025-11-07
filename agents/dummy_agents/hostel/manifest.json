@@ -1,7 +1,0 @@
-{
-  "name": "hostel",
-  "description": "Finds hostels and manages bookings.",
-  "keywords": ["hostel", "booking", "stay", "travel"],
-  "entrypoint": "agent.py",
-  "function": "handle_task"
-}

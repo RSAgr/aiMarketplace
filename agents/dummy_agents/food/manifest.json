@@ -1,7 +1,0 @@
-{
-  "name": "food",
-  "description": "Orders food and manages deliveries.",
-  "keywords": ["food", "order", "delivery", "meal"],
-  "entrypoint": "agent.py",
-  "function": "handle_task"
-}

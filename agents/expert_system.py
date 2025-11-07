@@ -12,8 +12,8 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 # ===========================
 # 🔹 Setup
 # ===========================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = "AIzaSyDr4E-qLuYvOUemP5mjyCPmp8TCY05iguQ"
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
@@ -47,6 +47,8 @@ def route_to_agent(state: ExpertState):
     AGENT_MAP = {
         "hotel": "hotel_agent",
         "flight": "flight_agent",
+        "taxi": "taxi",
+        "food": "food_agent"
     }
 
     # Ask Gemini to choose which agent should handle the task
@@ -122,7 +124,7 @@ if __name__ == "__main__":
            task_json = json.load(sys.stdin)
         except Exception as e:
             task_json = {
-            "task": "Book a hotel in Goa",
+            "task": "Book a car in Goa",
             "result": None  # None for now — will be filled later by an agent
         }
     task = task_json.get("task")
