@@ -13,9 +13,9 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 # 🔹 Setup
 # ===========================
 # GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_API_KEY = "AIzaSyDr4E-qLuYvOUemP5mjyCPmp8TCY05iguQ"
+GEMINI_API_KEY = "AIzaSyCy7O1GLQ5pfV-A0S4uNbl_Z9kHJBmHCRA"
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 # ===========================
 # 🔹 Define State
@@ -164,14 +164,14 @@ if __name__ == "__main__":
     #         "result": None  # None for now — will be filled later by an agent
     #     }
     #task = task_json.get("task")
-    task = "Book flight for my trip to Goa"
+    task = "Plan the complete iternary for my trip to Goa"
     #result = task_json.get("result")
     result = None
 
     graph = build_graph()
     final_state = graph.invoke({"task": task, "result": result})
-    for k, v in final_state.items():
-        print(k, type(v))
-
+    # for k, v in final_state.items():
+    #     print(k, type(v))
+    final_state["result"] = str(final_state["result"])
     print(json.dumps(final_state, indent=2))
 

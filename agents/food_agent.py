@@ -3,7 +3,7 @@ import google.generativeai as genai
 
 GEMINI_API_KEY = "AIzaSyDr4E-qLuYvOUemP5mjyCPmp8TCY05iguQ"
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 def solve_task(task):
     prompt = f"You are a demo model for my AI marketplace. Act as a food spots finding and book if asked for.\nTask: {task}"
