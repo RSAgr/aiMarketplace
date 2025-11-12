@@ -79,7 +79,7 @@ app.post("/getAIResponse", async (req, res) => {
     // const aiResponse = await callAIModel(userInput);
     // res.json({ reply: aiResponse });
     const py = spawn("python", ["D:\\AImarket\\agents\\expert_system.py", JSON.stringify({
-    taskInput: userInput,
+    task: userInput,
     result: "This is a mock AI response from the backend."
   }),]);
     let output = "";

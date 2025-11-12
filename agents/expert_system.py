@@ -152,21 +152,21 @@ def build_graph():
 
 
 if __name__ == "__main__":
-    # if len(sys.argv) > 1:
-    #     task_json = json.loads(sys.argv[1])
-    # else:
-    #     # Simulate getting data from an agent
-    #     try:
-    #        task_json = json.load(sys.stdin)
-    #     except Exception as e:
-    #         task_json = {
-    #         "task": "Book a car in Goa",
-    #         "result": None  # None for now — will be filled later by an agent
-    #     }
-    #task = task_json.get("task")
-    task = "Plan the complete iternary for my trip to Goa"
-    #result = task_json.get("result")
-    result = None
+    if len(sys.argv) > 1:
+        task_json = json.loads(sys.argv[1])
+    else:
+        # Simulate getting data from an agent
+        try:
+           task_json = json.load(sys.stdin)
+        except Exception as e:
+            task_json = {
+            "task": "Book a car in Goa",
+            "result": None  # None for now — will be filled later by an agent
+        }
+    task = task_json.get("task")
+    #task = "Plan the complete iternary for my trip to Goa"
+    result = task_json.get("result")
+    #result = None
 
     graph = build_graph()
     final_state = graph.invoke({"task": task, "result": result})
@@ -174,4 +174,3 @@ if __name__ == "__main__":
     #     print(k, type(v))
     final_state["result"] = str(final_state["result"])
     print(json.dumps(final_state, indent=2))
-
