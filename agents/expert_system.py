@@ -74,13 +74,13 @@ def route_to_agent(state: ExpertState):
     missing_info = model.generate_content(info_prompt).text.strip().lower()
 
     user_inputs = {}
-    if missing_info != "none":
-        print(f"🔍 Missing info: {missing_info}")
-        for item in [m.strip() for m in missing_info.split(",") if m.strip()]:
-            user_inputs[item] = input(f"Please enter {item}: ")
+    # if missing_info != "none":
+    #     print(f"🔍 Missing info: {missing_info}")
+    #     for item in [m.strip() for m in missing_info.split(",") if m.strip()]:
+    #         user_inputs[item] = input(f"Please enter {item}: ")
 
-        # Combine original task with new info
-        task += " " + ", ".join([f"{k}: {v}" for k, v in user_inputs.items()])
+    #     # Combine original task with new info
+    #     task += " " + ", ".join([f"{k}: {v}" for k, v in user_inputs.items()])
 
     # Step 3: Call the agent
     try:

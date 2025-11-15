@@ -118,7 +118,7 @@ const Chats = () => {
     <div className="chats-container">
       <div className="chats-header">
         <h2>AI Assistant</h2>
-        <p>Ask me anything about hotels, flights, restaurants, car rentals & more</p>
+        <p>Just Command Me</p>
       </div>
 
       <div className="chats-messages">
