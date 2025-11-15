@@ -45,11 +45,6 @@ Imagine planning a trip to New York:
 - Filter by task type, pricing, and reputation
 - Access agents from major service providers (RedBus, OYO, etc.)
 
-###  Reputation System
-- **Repute Score**: Weighted average of expert system evaluation and user ratings
-- Transparent performance tracking
-- Historical task completion data
-
 ###  Blockchain Integration
 - All transactions recorded on Algorand blockchain
 - Immutable task history and payments
@@ -185,19 +180,130 @@ cd frontend
 npm install
 ```
 
-### 3. Install Backend Dependencies
+### 3. On the root directory
 
 ```bash
-cd backend
-npm install
-```
-
-### 4. Install Python Dependencies
-
-```bash
-cd python-agents
 pip install -r requirements.txt
 ```
+
+### 4. Demo Video
+[Demo](https://youtube.com)
+Flowchart using the states (example shown in the video above)
+ +-----------+
+                                                     | __start__ |
+                                                     +-----------+
+                                                            *
+                                                            *
+                                                            *
+                                                  +-----------------+
+                                                  | understand_task |
+                                                  +-----------------+
+                                                            *
+                                                            *
+                                                            *
+                                                   +---------------+
+                                                ***| decide_agents |.....
+                                       ********* **+---------------+***  ........
+                              *********      ****           *          ****      .........
+                     *********           ****               *              ****           .........
+                *****                 ***                   *                  ***                 ........
++--------------+           +------------+           +-------------+           +------------+               .....
+| flight_agent |**         | food_agent |           | hotel_agent |        ***| taxi_agent |                   .
++--------------+  ******   +------------+           +-------------+  ******   +------------+                   .
+                        ******         **           **        *******                                          .
+                              ******     **       **    ******                                                 .
+                                    ****   *    **  ****                                                       .
+                                     +---------------+                                                         .
+                                     | merge_results |                                                         .
++--------------+  ******   +------------+           +-------------+  ******   +------------+                   .
+                        ******         **           **        *******                                          .
+                              ******     **       **    ******                                                 .
+                                    ****   *    **  ****                                                       .
+                                     +---------------+                                                         .
+                                     | merge_results |                                                         .
+                                     +---------------+                                                         .
+                                             *                                                                 .
+                                             *                                                                 .
+                                             *                                                                 .
+                                    +-----------------+                                                    .....
+                                    | evaluate_result |                                            ........
+                                    +-----------------+                                   .........
+                                                    **                           .........
+                                                      **                 ........
+                                                        **          .....
+                                                 +-------------------+
+                                                 | generate_feedback |
+                                                 +-------------------+
+                                                            .
+                                                            .
+                                                            .
++--------------+  ******   +------------+           +-------------+  ******   +------------+                   .
+                        ******         **           **        *******                                          .
+                              ******     **       **    ******                                                 .
+                                    ****   *    **  ****                                                       .
+                                     +---------------+                                                         .
+                                     | merge_results |                                                         .
+                                     +---------------+                                                         .
+                                             *                                                                 .
+                                             *                                                                 .
+                                             *                                                                 .
+                                    +-----------------+                                                    .....
+                                    | evaluate_result |                                            ........
+                                    +-----------------+                                   .........
+                                                    **                           .........
++--------------+  ******   +------------+           +-------------+  ******   +------------+                   .
+                        ******         **           **        *******                                          .
+                              ******     **       **    ******                                                 .
+                                    ****   *    **  ****                                                       .
+                                     +---------------+                                                         .
+                                     | merge_results |                                                         .
+                                     +---------------+                                                         .
+                                             *                                                                 .
+                              ******     **       **    ******                                                 .
+                                    ****   *    **  ****                                                       .
+                                     +---------------+                                                         .
+                                     | merge_results |                                                         .
+                                     +---------------+                                                         .
+                                     | merge_results |                                                         .
+                                     | merge_results |                                                         .
+                                     +---------------+                                                         .
+                                             *                                                                 .
+                                             *                                                                 .
+                                             *                                                                 .
+                                             *                                                                 .
+                                    +-----------------+                                                    .....
+                                    | evaluate_result |                                            ........
+                                    +-----------------+                                   .........
+                                                    **                           .........
+                                                      **                 ........
+                                                        **          .....
+                                                 +-------------------+
+                                                 | generate_feedback |
+                                                 +-------------------+
+                                                            .
+                                                            .
+                                                            .
+                                                      +---------+
+                                                      | __end__ |
+                                                 +-------------------+
+                                                 | generate_feedback |
+                                                 +-------------------+
+                                                            .
+                                                            .
+                                                            .
+                                                      +---------+
+                                                      | __end__ |
+                                                            .
+                                                            .
+                                                            .
+                                                      +---------+
+                                                      | __end__ |
+                                                            .
+                                                      +---------+
+                                                      | __end__ |
+                                                      | __end__ |
+                                                      +---------+
+
 
 ### 5. Setup AlgoKit
 
@@ -238,17 +344,12 @@ Frontend will run on `http://localhost:5173`
 Our smart contracts handle:
 
 - **Agent Registration**: Register AI agents with fixed pricing
-- **Task Escrow**: Lock user funds until task completion
-- **Reputation Management**: Update agent reputation scores
 - **Payment Distribution**: Automatic fund release upon verification
 - **Task History**: Immutable record of all transactions
 
-### Deploy Smart Contracts
+### Deployed Smart Contracts
 
-```bash
-cd smart-contracts
-algokit deploy
-```
+[Task register and verifier](https://lora.algokit.io/testnet/application/749534825)
 
 ##  Use Cases
 
@@ -263,6 +364,8 @@ algokit deploy
 - Market research
 - Data analysis
 - Customer service automation
+
+### Educational Usecases
 
 ### Personal Assistant
 - Calendar management
@@ -290,3 +393,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Google for Generative AI API
 - Pera Wallet team
 - Open source community
+
+## Future Works
+
+###  Reputation System
+- **Repute Score**: Weighted average of expert system evaluation and user ratings
+- Transparent performance tracking
+- Historical task completion data
