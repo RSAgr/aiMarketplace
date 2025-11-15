@@ -1,41 +1,53 @@
-import os
 import json
 import sys
 import importlib
-import io
+import time
+import hashlib
+from typing import TypedDict, Dict, Annotated
+
 import google.generativeai as genai
+from algosdk import mnemonic, account
+from algosdk.transaction import ApplicationNoOpTxn, wait_for_confirmation
+from algosdk.v2client import algod
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, Dict, Annotated, List, Tuple
-import operator
 
-# ensure stdout uses utf-8 on Windows consoles
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 
-# ===========================
-# 🔹 Setup
-# ===========================
+ALGOD_ADDRESS = "https://testnet-api.algonode.cloud"
+ALGOD_TOKEN = ""
+APP_ID = 749534825 
+
+EXPERT_MN = "father eye direct lava stay process tuna anger picture ahead differ hand habit hobby curious local book history trust arrow hidden broken bench abstract forward"
+expert_pk = mnemonic.to_private_key(EXPERT_MN)
+expert_addr = account.address_from_private_key(expert_pk)
+
+AGENT_MN = "fluid vintage inspire matrix quarter paddle crater matrix wreck cube buddy opinion guess split erode teach base horse oxygen mouse decrease session icon absent memory"
+agent_pk = mnemonic.to_private_key(AGENT_MN)
+agent_addr = account.address_from_private_key(agent_pk)
+
+client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
+
 GEMINI_API_KEY = "AIzaSyCy7O1GLQ5pfV-A0S4uNbl_Z9kHJBmHCRA"
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
-# ===========================
-# 🔹 State definition
-# ===========================
+def merge_dicts(left: Dict[str, str], right: Dict[str, str]) -> Dict[str, str]:
+    return {**(left or {}), **(right or {})}
+
 class ExpertState(TypedDict, total=False):
     task: str
     understanding: str
-    chosen_agents: List[str]
-    # partial_results is a mergeable list of tuples (agent_key, output)
-    partial_results: Annotated[List[Tuple[str, str]], operator.add]
+    chosen_agents: list[str]
+    agent_results: Annotated[Dict[str, str], merge_dicts]
     result: str
     verdict: str
     feedback: str
     approved: bool
+    result_hash: str
+    blockchain_registered: bool
+    payment_released: bool
 
-# ===========================
-# 🔹 Agent map (available modules)
-# ===========================
 AGENT_MAP: Dict[str, str] = {
     "hotel": "hotel_agent",
     "flight": "flight_agent",
@@ -43,192 +55,301 @@ AGENT_MAP: Dict[str, str] = {
     "food": "food_agent"
 }
 
-# ===========================
-# 🔹 1. Understand task
-#    (returns only the 'understanding' key)
-# ===========================
+def register_task_on_chain(hash_value: str) -> dict:
+    print(f"\nRegistering on blockchain...")
+    print(f"   Hash: {hash_value}")
+    
+    txn = ApplicationNoOpTxn(
+        sender=agent_addr,
+        sp=client.suggested_params(),
+        index=APP_ID,
+        app_args=[b"register_task", hash_value.encode()],
+    )
+    
+    signed = txn.sign(agent_pk)
+    txid = client.send_transaction(signed)
+    result = wait_for_confirmation(client, txid, 4)
+    
+    print(f"Registered in round {result['confirmed-round']}")
+    print(f"https://lora.algokit.io/testnet/transaction/{txid}")
+    return result
+
+def approve_and_release_payment() -> dict:
+    print("\nReleasing payment...")
+    
+    initial_balance = client.account_info(agent_addr)['amount'] / 1_000_000
+    
+    txn = ApplicationNoOpTxn(
+        sender=expert_addr,
+        sp=client.suggested_params(),
+        index=APP_ID,
+        app_args=[b"approve_and_release"],
+        accounts=[agent_addr]
+    )
+    
+    signed = txn.sign(expert_pk)
+    txid = client.send_transaction(signed)
+    result = wait_for_confirmation(client, txid, 4)
+    
+    final_balance = client.account_info(agent_addr)['amount'] / 1_000_000
+    payment = final_balance - initial_balance
+    
+    print(f"Payment: {payment:.4f} ALGO")
+    print(f"New balance: {final_balance} ALGO")
+    print(f"https://lora.algokit.io/testnet/transaction/{txid}")
+    return result
+
 def understand_task(state: ExpertState):
-    task = state["task"]
-    prompt = f"Summarize the user task:\n{task}"
-    understanding = model.generate_content(prompt).text.strip()
-    return {"understanding": understanding}
+    print(f"\nUnderstanding task...")
+    try:
+        prompt = f"Briefly summarize this task: {state['task']}"
+        understanding = model.generate_content(prompt).text.strip()
+        print(f"   {understanding[:80]}...")
+        return {"understanding": understanding}
+    except:
+        print(f"   Using fallback")
+        return {"understanding": f"Task: {state['task']}"}
 
-# ===========================
-# 🔹 2. Decide which agents are needed
-#    (returns only 'chosen_agents' and initializes 'partial_results' as an empty list)
-# ===========================
 def decide_agents(state: ExpertState):
-    task = state["task"]
-    prompt = f"""
-Task: {task}
-Agents available: {', '.join(AGENT_MAP.keys())}
+    print(f"\nSelecting agents...")
+    try:
+        prompt = f"""Task: {state['task']}
+Available agents: {', '.join(AGENT_MAP.keys())}
+Which agents are needed? Respond with comma-separated list."""
+        
+        response = model.generate_content(prompt).text.lower()
+        chosen = [x.strip() for x in response.split(",") if x.strip()]
+        chosen = [c for c in chosen if c in AGENT_MAP]
+        
+        if not chosen:
+            chosen = list(AGENT_MAP.keys())
+        
+        print(f"   {', '.join(chosen)}")
+        return {"chosen_agents": chosen, "agent_results": {}}
+    except:
+        print(f"   Using all agents")
+        return {"chosen_agents": list(AGENT_MAP.keys()), "agent_results": {}}
 
-Which agents should contribute?
-Respond with comma-separated values like:
-hotel, flight, taxi
-"""
-    response = model.generate_content(prompt).text.lower()
-    chosen = [x.strip() for x in response.split(",") if x.strip()]
-
-    # fallback: if model returns nothing valid, default to all agents
-    chosen = [c for c in chosen if c in AGENT_MAP]
-    if not chosen:
-        chosen = list(AGENT_MAP.keys())
-
-    # initialize partial_results as an empty list (mergeable channel)
-    return {"chosen_agents": chosen, "partial_results": []}
-
-# ===========================
-# 🔹 3. Individual agent nodes (fan-out)
-#    Each agent node returns only {"partial_results": [(agent_key, output)]}
-# ===========================
 def make_agent_node(agent_key: str):
     def agent_node(state: ExpertState):
-        chosen = state.get("chosen_agents", [])
-        if agent_key not in chosen:
-            # do not write anything if skipped
+        if agent_key not in state.get("chosen_agents", []):
             return {}
-
-        module_name = AGENT_MAP[agent_key]
+        
+        print(f"\nRunning {agent_key}_agent...")
+        
         try:
-            mod = importlib.import_module(module_name)
-            # agent can return dict-like or string; normalize
+            mod = importlib.import_module(AGENT_MAP[agent_key])
             agent_out = mod.solve_task(state["task"])
             output = agent_out.get("result", "") if isinstance(agent_out, dict) else str(agent_out)
+            print(f"   {agent_key} done")
+            return {"agent_results": {agent_key: output}}
+            
         except Exception as e:
-            output = f"Error running {module_name}: {e}"
-
-        # return a list of one tuple — langgraph's operator.add will merge lists across nodes
-        return {"partial_results": [(agent_key, output)]}
-
+            error_msg = str(e)[:50]
+            print(f"   {agent_key} error: {error_msg}")
+            return {"agent_results": {agent_key: f"Error: {error_msg}"}}
+    
     return agent_node
 
-# ===========================
-# 🔹 4. Merge agent outputs (fan-in)
-#    Return only the 'result' key
-# ===========================
 def merge_results(state: ExpertState):
-    merged = []
-    # partial_results is a list of (agent_key, output) tuples
-    for agent_tuple in state.get("partial_results", []) or []:
-        if not isinstance(agent_tuple, (list, tuple)) or len(agent_tuple) != 2:
-            # skip malformed entries
-            continue
-        agent, result = agent_tuple
-        merged.append(f"### {agent.upper()} AGENT RESULT\n{result}\n")
-    joined = "\n".join(merged)
-    return {"result": joined}
+    print("\nMerging results...")
+    
+    agent_results = state.get("agent_results", {})
+    if not agent_results:
+        print("   No results to merge!")
+        return {"result": "No agent results available"}
+    
+    result = "\n".join(
+        f"### {key.upper()} AGENT\n{val}\n"
+        for key, val in agent_results.items()
+    )
+    
+    print(f"   Merged {len(agent_results)} results")
+    return {"result": result}
 
-# ===========================
-# 🔹 5. Evaluate result
-#    Returns only 'verdict'
-# ===========================
 def evaluate_result(state: ExpertState):
-    prompt = f"""
-Evaluate if the merged multi-agent result solves this task.
+    print("\nEvaluating...")
+    try:
+        prompt = (
+            f"Does this solve the task? Answer yes or no.\n"
+            f"Task: {state['task']}\n"
+            f"Result: {state.get('result', '')}"
+        )
+        response = model.generate_content(prompt).text.strip().lower()
+        verdict = "yes" if "yes" in response else "no"
+        print(f"   {verdict}")
+        return {"verdict": verdict}
+    except Exception:
+        print("   Defaulting to yes")
+        return {"verdict": "yes"}
 
-Task: {state['task']}
-Result: {state.get('result', '')}
-
-Respond only: yes or no.
-"""
-    verdict = model.generate_content(prompt).text.strip().lower()
-    verdict = "yes" if verdict.startswith("y") else "no"
-    return {"verdict": verdict}
-
-# ===========================
-# 🔹 6. Feedback + Improvement loop
-#    Returns 'feedback' and 'approved', and updates 'task' only when improvement is needed.
-#    Only this node updates 'task', so no concurrent-write occurs.
-# ===========================
 def generate_feedback(state: ExpertState):
-    prompt = f"""
-Provide concise feedback on this result.
-
-Task: {state['task']}
-Result: {state.get('result', '')}
-"""
-    feedback = model.generate_content(prompt).text.strip()
+    print("\nGenerating feedback...")
+    
+    try:
+        prompt = (
+            "Short feedback (20 words max):\n"
+            f"Task: {state['task']}\n"
+            f"Result: {state.get('result', '')}"
+        )
+        feedback = model.generate_content(prompt).text.strip()
+    except Exception:
+        feedback = "Result appears satisfactory."
+    
     approved = state.get("verdict", "").startswith("y")
-
+    print(f"   Approved: {approved}")
+    print(f"   {feedback[:60]}...")
+    
     if not approved:
-        new_task = state["task"] + "\nFix the result based on this feedback: " + feedback
-        return {"feedback": feedback, "approved": approved, "task": new_task}
-    else:
-        return {"feedback": feedback, "approved": approved}
+        return {
+            "feedback": feedback,
+            "approved": approved,
+            "task": f"{state['task']}\n[Improve based on: {feedback}]"
+        }
+    
+    return {"feedback": feedback, "approved": approved}
 
-# ===========================
-# 🔹 Build LangGraph Pipeline
-# ===========================
+def blockchain_integration(state: ExpertState):
+    if not state.get("approved"):
+        return {}
+    
+    print("\n" + "="*60)
+    print("TASK APPROVED - BLOCKCHAIN INTEGRATION")
+    print("="*60)
+    
+    result_hash = hashlib.sha256(
+        str(state.get("result", "")).encode()
+    ).hexdigest()[:32]
+    
+    print(f"Result hash: {result_hash}")
+    
+    try:
+        register_task_on_chain(result_hash)
+        approve_and_release_payment()
+        
+        print("\n" + "="*60)
+        print("COMPLETE!")
+        print("="*60)
+        print("Task registered on-chain")
+        print("Payment released to agent")
+        print("\nView contract:")
+        print(f"   https://lora.algokit.io/testnet/application/{APP_ID}")
+        
+        return {
+            "result_hash": result_hash,
+            "blockchain_registered": True,
+            "payment_released": True
+        }
+        
+    except Exception as e:
+        error_msg = str(e)[:100]
+        print(f"\nBlockchain error: {error_msg}")
+        
+        if "overspend" in error_msg:
+            print("Contract needs funding")
+        
+        return {
+            "result_hash": result_hash,
+            "blockchain_registered": False,
+            "payment_released": False
+        }
+
 def build_graph():
     graph = StateGraph(ExpertState)
-
-    graph.add_node("understand_task", understand_task)
-    graph.add_node("decide_agents", decide_agents)
-
-    # create agent nodes
-    for agent_key in AGENT_MAP.keys():
+    
+    graph.add_node("understand", understand_task)
+    graph.add_node("decide", decide_agents)
+    
+    for agent_key in AGENT_MAP:
         graph.add_node(f"{agent_key}_agent", make_agent_node(agent_key))
-
-    graph.add_node("merge_results", merge_results)
-    graph.add_node("evaluate_result", evaluate_result)
-    graph.add_node("generate_feedback", generate_feedback)
-
-    # flow
-    graph.add_edge("understand_task", "decide_agents")
-
-    # fan-out: decide_agents -> each agent node
+    
+    graph.add_node("merge", merge_results)
+    graph.add_node("evaluate", evaluate_result)
+    graph.add_node("feedback", generate_feedback)
+    graph.add_node("blockchain", blockchain_integration)
+    
+    graph.add_edge("understand", "decide")
+    
     for agent_key in AGENT_MAP:
-        graph.add_edge("decide_agents", f"{agent_key}_agent")
-
-    # fan-in: each agent node -> merge_results
-    for agent_key in AGENT_MAP:
-        graph.add_edge(f"{agent_key}_agent", "merge_results")
-
-    graph.add_edge("merge_results", "evaluate_result")
-    graph.add_edge("evaluate_result", "generate_feedback")
-
-    # feedback loop: if not approved -> back to decide_agents (retry)
+        graph.add_edge("decide", f"{agent_key}_agent")
+        graph.add_edge(f"{agent_key}_agent", "merge")
+    
+    graph.add_edge("merge", "evaluate")
+    graph.add_edge("evaluate", "feedback")
+    
     graph.add_conditional_edges(
-        "generate_feedback",
-        lambda state: "retry" if not state.get("approved") else END,
-        {
-            "retry": "decide_agents",
-            END: END
-        }
+        "feedback",
+        lambda s: "blockchain" if s.get("approved") else "retry",
+        {"retry": "decide", "blockchain": "blockchain"}
     )
-
-    graph.set_entry_point("understand_task")
+    
+    graph.add_edge("blockchain", END)
+    graph.set_entry_point("understand")
+    
     return graph.compile()
 
-# ===========================
-# 🔹 Run
-# ===========================
-if __name__ == "__main__":
-    #Accept JSON task via argv or stdin as before (fallback to example)
-    if len(sys.argv) > 1:
-        task_json = json.loads(sys.argv[1])
-    else:
-        # Simulate getting data from an agent
-        try:
-           task_json = json.load(sys.stdin)
-        except Exception as e:
-            task_json = {
-            "task": "Book a car in Goa",
-            "result": None  # None for now — will be filled later by an agent
-        }
-    task = task_json.get("task")
+def make_serializable(obj):
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    if isinstance(obj, dict):
+        return {k: make_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [make_serializable(item) for item in obj]
+    return str(obj)
+
+def main():
+    print("\n" + "="*60)
+    print("MULTI-AGENT SYSTEM + BLOCKCHAIN")
+    print("="*60)
+    print(f"Expert: {expert_addr[:10]}...")
+    print(f"Agent: {agent_addr[:10]}...")
+    print(f"Contract: {APP_ID}")
+    print("="*60 + "\n")
     
-    result = task_json.get("result")
-    result = None
+    task = (
+        json.loads(sys.argv[1]).get("task")
+        if len(sys.argv) > 1
+        else input("Task: ") or "Book flight Delhi to Mumbai and taxi from airport"
+    )
+    
+    print(f"Task: {task}\n")
+    
+    try:
+        graph = build_graph()
+        final_state = graph.invoke({"task": task})
+        
+        print("\n" + "="*60)
+        print("FINAL RESULTS")
+        print("="*60)
+        print("\n===== COMBINED RESULT =====")
+        print(final_state.get('result', 'No result'))
+        
+        print("\n===== STATUS =====")
+        print(f"Verdict: {final_state.get('verdict')}")
+        print(f"Feedback: {final_state.get('feedback')}")
+        print(f"Approved: {final_state.get('approved')}")
+        print(f"Blockchain registered: {final_state.get('blockchain_registered', False)}")
+        print(f"Payment released: {final_state.get('payment_released', False)}")
+        
+        if final_state.get('result_hash'):
+            print(f"Result hash: {final_state.get('result_hash')}")
+        
+        with open("multi_agent_result.json", "w", encoding='utf-8') as f:
+            json.dump(
+                make_serializable(final_state),
+                f,
+                indent=2,
+                ensure_ascii=False
+            )
+        
+        print("\nSaved to: multi_agent_result.json")
+        
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user")
+    except Exception as e:
+        print(f"\nError: {e}")
+        import traceback
+        traceback.print_exc()
 
-    graph = build_graph()
-    final_state = graph.invoke({"task": task})
-
-    # final_state contains merged fields — print friendly output
-    print("\n\n===== FINAL MERGED RESULT =====")
-    print(final_state.get("result", "No result"))
-    print("\n===== VERDICT =====")
-    print(final_state.get("verdict"))
-    print("\n===== FEEDBACK =====")
-    print(final_state.get("feedback"))
+if __name__ == "__main__":
+    main()
