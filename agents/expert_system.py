@@ -18,17 +18,32 @@ ALGOD_ADDRESS = "https://testnet-api.algonode.cloud"
 ALGOD_TOKEN = ""
 APP_ID = 749534825 
 
-EXPERT_MN = "father eye direct lava stay process tuna anger picture ahead differ hand habit hobby curious local book history trust arrow hidden broken bench abstract forward"
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
+EXPERT_MN = os.getenv("EXPERT_MN")
+
+if EXPERT_MN is None:
+    raise ValueError("EXPERT_MN not found in environment variables!")
 expert_pk = mnemonic.to_private_key(EXPERT_MN)
 expert_addr = account.address_from_private_key(expert_pk)
 
-AGENT_MN = "fluid vintage inspire matrix quarter paddle crater matrix wreck cube buddy opinion guess split erode teach base horse oxygen mouse decrease session icon absent memory"
+
+AGENT_MN = os.getenv("AGENT_MN")
+
+if AGENT_MN is None:
+    raise ValueError("AGENT_MN not found in environment variables!")
 agent_pk = mnemonic.to_private_key(AGENT_MN)
 agent_addr = account.address_from_private_key(agent_pk)
 
 client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_ADDRESS)
 
-GEMINI_API_KEY = "AIzaSyCy7O1GLQ5pfV-A0S4uNbl_Z9kHJBmHCRA"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY is None:
+    raise ValueError("GEMINI_API_KEY not found in environment variables!")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash-latest")
 

@@ -188,6 +188,7 @@ pip install -r requirements.txt
 
 ### 4. Demo Video
 [Demo](https://youtu.be/ONJzK7gd3a4)
+
 Flowchart using the states (example shown in the video above)
 ![](image-1.png)
 ![](image-2.png)
