@@ -155,13 +155,15 @@ Imagine planning a trip to New York:
 
 ### Environment Variables
 
-Create a `.env` file in the backend directory:
+Create a `.env` file in the agent directory:
 
 ```env
 GOOGLE_GENAI_API_KEY=your_google_ai_api_key
 PORT=3001
 ALGORAND_NODE_URL=https://testnet-api.algonode.cloud
 ALGORAND_INDEXER_URL=https://testnet-idx.algonode.cloud
+EXPERT_MN
+AGENT_MN
 ```
 
 ##  Installation
